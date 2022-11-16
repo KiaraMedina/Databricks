@@ -33,3 +33,7 @@ final_df = driver_standings_df.withColumn("rank", rank().over(driver_rank_spec))
 # COMMAND ----------
 
 display(final_df.filter("race_year = 2020"))
+
+# COMMAND ----------
+
+final_df.write.mode("overwrite").parquet(f"{presentation_folder_path}/driver_standigs")
