@@ -1,19 +1,28 @@
 # Databricks notebook source
+dbutils.widgets.text("p_data_source","")
+v_data_soruce = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
+from pyspark.sql.functions import col, current_timestamp, lit
+
+# COMMAND ----------
+
 constructors_schema = "constructorId INT, constructorRef STRING, name STRING, nationality STRING, url STRING"
 
 # COMMAND ----------
 
 constructor_df= spark.read\
 .schema(constructors_schema)\
-.json("/mnt/storageformula1dl/raw/constructors.json")
-
-# COMMAND ----------
-
-constructor_df.printSchema()
-
-# COMMAND ----------
-
-display(constructor_df)
+.json(f"{raw_folder_path}/constructors.json")
 
 # COMMAND ----------
 
@@ -22,15 +31,7 @@ display(constructor_df)
 
 # COMMAND ----------
 
-from pyspark.sql.functions import col, current_timestamp
-
-# COMMAND ----------
-
 constructor_dropped_df = constructor_df.drop(col("url"))
-
-# COMMAND ----------
-
-display(constructor_dropped_df)
 
 # COMMAND ----------
 
@@ -39,13 +40,13 @@ display(constructor_dropped_df)
 
 # COMMAND ----------
 
-constructor_final_df = constructor_dropped_df.withColumnRenamed("constructorId","constructor_id")\
-                                             .withColumnRenamed("constructorRef","contructor_ref")\
-                                             .withColumn("ingestion_date", current_timestamp())
+constructor_final_df = add_ingestion_date(constructor_dropped_df)
 
 # COMMAND ----------
 
-display(constructor_final_df)
+constructor_final_df = constructor_dropped_df.withColumnRenamed("constructorId","constructor_id")\
+                                             .withColumnRenamed("constructorRef","contructor_ref")\
+                                             .withColumn("data_source", lit(v_data_soruce))
 
 # COMMAND ----------
 
@@ -54,12 +55,12 @@ display(constructor_final_df)
 
 # COMMAND ----------
 
-constructor_final_df.write.mode("overwrite").parquet("/mnt/storageformula1dl/processed/constructor")
+constructor_final_df.write.mode("overwrite").parquet(f"{processed_folder_path}/constructor")
 
 # COMMAND ----------
 
-display(spark.read.parquet("/mnt/storageformula1dl/processed/constructor"))
+display(spark.read.parquet(f"{processed_folder_path}/constructor"))
 
 # COMMAND ----------
 
-
+dbutils.notebook.exit("Success")

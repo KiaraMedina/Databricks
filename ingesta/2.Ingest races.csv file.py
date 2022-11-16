@@ -1,5 +1,22 @@
 # Databricks notebook source
+dbutils.widgets.text("p_data_source","")
+v_data_soruce = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
 from pyspark.sql.types import StructType,IntegerType, StringType, DateType, StructField
+
+# COMMAND ----------
+
+from pyspark.sql.functions import current_timestamp,to_timestamp, col, concat, lit
 
 # COMMAND ----------
 
@@ -19,11 +36,7 @@ racesSchema = StructType(fields=[
 races_df = spark.read\
 .option("header",True)\
 .schema(racesSchema)\
-.csv("/mnt/storageformula1dl/raw/races.csv")
-
-# COMMAND ----------
-
-display(races_df)
+.csv(f"{raw_folder_path}/races.csv")
 
 # COMMAND ----------
 
@@ -32,20 +45,20 @@ display(races_df)
 
 # COMMAND ----------
 
-from pyspark.sql.functions import current_timestamp,to_timestamp, col, concat, lit
+races_with_timestamp_df = add_ingestion_date(races_df)
 
 # COMMAND ----------
 
-races_with_timestamp_df = races_df.withColumn("ingestion", current_timestamp())\
-                                  .withColumn("race_timestamp", to_timestamp(concat(col('date'),lit(' '), col('time')), 'yyy-MM-dd HH:mm:ss' ))
+races_selected_df = races_with_timestamp_df\
+.withColumn("race_timestamp", to_timestamp(concat(col('date'),lit(' '), col('time')), 'yyy-MM-dd HH:mm:ss' ))\
+.withColumnRenamed("raceId","race_id")\
+.withColumnRenamed("year","race_year")\
+.withColumnRenamed("circuitId","circuit_id")\
+.withColumn("data_source", lit(v_data_soruce))
 
 # COMMAND ----------
 
-display(races_with_timestamp_df)
-
-# COMMAND ----------
-
-races_selected_df=races_with_timestamp_df.select(col("raceId").alias("race_id"),col("year").alias("race_year"), col("round"), col("circuitId").alias("circuit_id"),col("name"),col("ingestion").alias("ingestion_date"), col("race_timestamp"))
+races_with_timestamp_df.show()
 
 # COMMAND ----------
 
@@ -54,12 +67,12 @@ races_selected_df=races_with_timestamp_df.select(col("raceId").alias("race_id"),
 
 # COMMAND ----------
 
-races_selected_df.write.mode("overwrite").partitionBy("race_year").parquet("/mnt/storageformula1dl/processed/race")
+races_selected_df.write.mode("overwrite").partitionBy("race_year").parquet(f"{processed_folder_path}/race")
 
 # COMMAND ----------
 
-df= spark.read.parquet("/mnt/storageformula1dl/processed/race")
+display(spark.read.parquet(f"{processed_folder_path}/race"))
 
 # COMMAND ----------
 
-display(df)
+dbutils.notebook.exit("Success")

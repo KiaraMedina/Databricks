@@ -1,5 +1,22 @@
 # Databricks notebook source
+dbutils.widgets.text("p_data_source","")
+v_data_soruce = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
 from pyspark.sql.types import StructType, StructField, IntegerType,StringType,BooleanType, DoubleType
+
+# COMMAND ----------
+
+from pyspark.sql.functions import col , current_timestamp, lit
 
 # COMMAND ----------
 
@@ -20,36 +37,12 @@ circuits_schema = StructType(fields= [
 circuits_df = spark.read\
 .option("header",True)\
 .schema(circuits_schema)\
-.csv("/mnt/storageformula1dl/raw/circuits.csv")
-
-# COMMAND ----------
-
-display(circuits_df)
-
-# COMMAND ----------
-
-circuits_df.columns
-
-# COMMAND ----------
-
-circuits_df.printSchema()
-
-# COMMAND ----------
-
-circuits_df.describe().show()
-
-# COMMAND ----------
-
-display(circuits_df)
+.csv(f"{raw_folder_path}/circuits.csv")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC #### Select only the required columns
-
-# COMMAND ----------
-
-from pyspark.sql.functions import col , current_timestamp
 
 # COMMAND ----------
 
@@ -65,15 +58,16 @@ circuits_select_df = circuits_df.select("circuitId","circuitRef","name","locatio
 
 # COMMAND ----------
 
-circuits_renamed_df = circuits_select_df.withColumnRenamed("circuitId","id")
+circuits_renamed_df = circuits_select_df.withColumnRenamed("circuitId","circuit_id")\
+.withColumnRenamed("circuitRef","circuit_ref")\
+.withColumnRenamed("lat",'latitude')\
+.withColumnRenamed("lng","longitude")\
+.withColumnRenamed("alt","altitude")\
+.withColumn("data_source", lit(v_data_soruce))
 
 # COMMAND ----------
 
-circuits_df_agg = circuits_renamed_df.withColumn("ingestion_date", current_timestamp())
-
-# COMMAND ----------
-
-display(circuits_df_agg)
+circuits_final_df= add_ingestion_date(circuits_renamed_df)
 
 # COMMAND ----------
 
@@ -82,17 +76,12 @@ display(circuits_df_agg)
 
 # COMMAND ----------
 
-circuits_df_agg.write.parquet("mnt/storageformula1dl/processed/circuits")
+circuits_final_df.write.mode("overwrite").parquet(f"{processed_folder_path}/circuits")
 
 # COMMAND ----------
 
-# MAGIC %fs
-# MAGIC ls /mnt/storageformula1dl/processed/circuits
+display(spark.read.parquet(f"{processed_folder_path}/circuits"))
 
 # COMMAND ----------
 
-df= spark.read.parquet("/mnt/storageformula1dl/processed/circuits")
-
-# COMMAND ----------
-
-display(df)
+dbutils.notebook.exit("Success")
