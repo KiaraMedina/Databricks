@@ -42,7 +42,7 @@ race_result_df = result_df.join(race_circuit_df, result_df.race_id == race_circu
 
 # COMMAND ----------
 
-final_df = race_result_df.select("race_year","race_name","race_date","circuit_location","driver_number","driver_nationanlity","team","grid","fastest_lap","race_time","points")
+final_df = race_result_df.select("race_year","driver_name","race_date","circuit_location","driver_number","driver_nationanlity","team","grid","fastest_lap","race_time","points")
 
 # COMMAND ----------
 
