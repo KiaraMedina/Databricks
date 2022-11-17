@@ -7,7 +7,7 @@ race_results_df = spark.read.parquet(f"{presentation_folder_path}/race_results")
 
 # COMMAND ----------
 
-display(race_df)
+display(race_results_df)
 
 # COMMAND ----------
 

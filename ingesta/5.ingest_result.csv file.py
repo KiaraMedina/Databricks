@@ -2,6 +2,15 @@
 dbutils.widgets.text("p_data_source","")
 v_data_soruce = dbutils.widgets.get("p_data_source")
 
+# COMMAND ----------
+
+dbutils.widgets.text("p_file_date","2021-03-21")
+v_file_date = dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
+v_file_date
+
 
 # COMMAND ----------
 
@@ -46,7 +55,7 @@ results_schema = StructType(fields=[
 
 results_df = spark.read\
 .schema(results_schema)\
-.json(f"{raw_folder_path}/results.json")
+.json(f"{raw_folder_path}/{v_file_date}/results.json")
 
 # COMMAND ----------
 
@@ -59,7 +68,8 @@ results_with_columns_df = results_df.withColumnRenamed("resultId","result_id")\
                                     .withColumnRenamed("fastestLap","fastest_lap")\
                                     .withColumnRenamed("fastestLapTime","fast_lap_time")\
                                     .withColumnRenamed("fastestLapSpeed","fastest_lap_speed")\
-                                    .withColumn("data_source", lit(v_data_soruce))
+                                    .withColumn("data_source", lit(v_data_soruce))\
+                                    .withColumn("file_date", lit(v_file_date))
 
 # COMMAND ----------
 
@@ -71,11 +81,40 @@ result_final_df = add_ingestion_date(result_drop_df)
 
 # COMMAND ----------
 
-result_final_df.write.mode("overwrite").partitionBy("race_id").parquet(f"{processed_folder_path}/results")
+# MAGIC %md
+# MAGIC ##### Method 1
+
+# COMMAND ----------
+
+for race_id_list in result_final_df.select("race_id").distinct().collect():
+    if (spark._jsparkSession.catalog().tableExists("f1_processed.results")):
+        spark.sql(f"ALTER TABLE f1_processed.results DROP IF EXISTS PARTITION (race_id = {race_id_list.race_id}) ")
+    
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+result_final_df.write.mode("append").partitionBy('race_id').format("parquet").saveAsTable('f1_processed.results')
 
 # COMMAND ----------
 
 display(spark.read.parquet(f"{processed_folder_path}/results"))
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select race_id, COUNT(1)
+# MAGIC from f1_processed.results
+# MAGIC group by race_id
+# MAGIC order by race_id DESC
+
+# COMMAND ----------
+
+# %sql
+# drop table f1_processed.results
 
 # COMMAND ----------
 

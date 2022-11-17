@@ -4,6 +4,11 @@ v_data_soruce = dbutils.widgets.get("p_data_source")
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_file_date","2021-03-21")
+v_file_date = dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
 # MAGIC %run "../includes/configuration"
 
 # COMMAND ----------
@@ -36,7 +41,7 @@ racesSchema = StructType(fields=[
 races_df = spark.read\
 .option("header",True)\
 .schema(racesSchema)\
-.csv(f"{raw_folder_path}/races.csv")
+.csv(f"{raw_folder_path}/{v_file_date}/races.csv")
 
 # COMMAND ----------
 
@@ -54,7 +59,8 @@ races_selected_df = races_with_timestamp_df\
 .withColumnRenamed("raceId","race_id")\
 .withColumnRenamed("year","race_year")\
 .withColumnRenamed("circuitId","circuit_id")\
-.withColumn("data_source", lit(v_data_soruce))
+.withColumn("data_source", lit(v_data_soruce))\
+.withColumn("file_date", lit(v_file_date))
 
 # COMMAND ----------
 
@@ -67,11 +73,16 @@ races_with_timestamp_df.show()
 
 # COMMAND ----------
 
-races_selected_df.write.mode("overwrite").partitionBy("race_year").parquet(f"{processed_folder_path}/race")
+races_selected_df.write.mode("overwrite").partitionBy("race_year").format("parquet").saveAsTable('f1_processed.races')
 
 # COMMAND ----------
 
-display(spark.read.parquet(f"{processed_folder_path}/race"))
+display(spark.read.parquet(f"{processed_folder_path}/races"))
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * FROM f1_processed.races;
 
 # COMMAND ----------
 
