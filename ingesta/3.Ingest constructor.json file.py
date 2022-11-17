@@ -61,11 +61,11 @@ constructor_final_df = constructor_dropped_df.withColumnRenamed("constructorId",
 
 # COMMAND ----------
 
-constructor_final_df.write.mode("overwrite").format("parquet").saveAsTable('f1_processed.constructor')
+constructor_final_df.write.mode("overwrite").format("delta").saveAsTable('f1_processed.constructor')
 
 # COMMAND ----------
 
-display(spark.read.parquet(f"{processed_folder_path}/constructor"))
+# display(spark.read.parquet(f"{processed_folder_path}/constructor"))
 
 # COMMAND ----------
 

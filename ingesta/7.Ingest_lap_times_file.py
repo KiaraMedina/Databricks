@@ -54,11 +54,13 @@ final_df= add_ingestion_date(columns_add_df)
 # COMMAND ----------
 
 # final_df.write.mode("overwrite").format("parquet").saveAsTable('f1_processed.lap_times')
-overwrite_partition(final_df,"f1_processed","lap_times","race_id")
+# overwrite_partition(final_df,"f1_processed","lap_times","race_id")
+merge_condition = "tgt.race_id = src.race_id AND tgt.driver_id = src.driver_id AND tgt.lap_id = src.lap_id"
+merge_delta_data(final_df,"f1_processed", "lap_times",processed_folder_path,merge_condition,"race_id")
 
 # COMMAND ----------
 
-display(spark.read.parquet(f"{processed_folder_path}/lap_times"))
+# display(spark.read.parquet(f"{processed_folder_path}/lap_times"))
 
 # COMMAND ----------
 

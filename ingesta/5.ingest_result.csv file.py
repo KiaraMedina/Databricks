@@ -131,7 +131,30 @@ result_final_df = add_ingestion_date(result_drop_df)
 
 # COMMAND ----------
 
-overwrite_partition(result_final_df,"f1_processed","results","race_id")
+# overwrite_partition(result_final_df,"f1_processed","results","race_id")
+
+# COMMAND ----------
+
+merge_condition = "tgt.result_id = src.result_id AND tgt.race_id = src.race_id"
+merge_delta_data(result_final_df,"f1_processed", "results",processed_folder_path,merge_condition,"race_id")
+
+# COMMAND ----------
+
+# def merge_delta_data(input_df,db_name, table_name,folder_path, merge_condition,partition_column):
+#     spark.conf.set("spark.databricks.optimizer.dynamicPartitionPruning","true"
+#                   )
+#     from delta.tables import DeltaTable
+
+#     if (spark._jsparkSession.catalog().tableExists(f"{db_name}.{table_name}")):
+#         deltaTable = DeltaTable.forPath(spark,f"{folder_path}/{table_name}")
+#         deltaTable.alias("tgt").merge(
+#             input_df.alias("src"),
+#             merge_condition)\
+#         .whenMatchedUpdateAll()\
+#         .whenNotMatchedInsertAll()\
+#         .execute()
+#     else:
+#         oinput_df.write.mode("overwrite").partitionBy(partition_column).format("delta").saveAsTable(f'{db_name}.{table_name}')
 
 # COMMAND ----------
 
@@ -156,10 +179,11 @@ display(spark.read.parquet(f"{processed_folder_path}/results"))
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select race_id, COUNT(1)
+# MAGIC select race_id, driver_id, COUNT(1)
 # MAGIC from f1_processed.results
-# MAGIC group by race_id
-# MAGIC order by race_id DESC
+# MAGIC group by race_id, driver_id
+# MAGIC having COUNT(1) > 1
+# MAGIC order by race_id, driver_id desc
 
 # COMMAND ----------
 

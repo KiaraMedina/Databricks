@@ -73,11 +73,11 @@ races_with_timestamp_df.show()
 
 # COMMAND ----------
 
-races_selected_df.write.mode("overwrite").partitionBy("race_year").format("parquet").saveAsTable('f1_processed.races')
+races_selected_df.write.mode("overwrite").partitionBy("race_year").format("delta").saveAsTable('f1_processed.races')
 
 # COMMAND ----------
 
-display(spark.read.parquet(f"{processed_folder_path}/races"))
+# display(spark.read.parquet(f"{processed_folder_path}/races"))
 
 # COMMAND ----------
 
