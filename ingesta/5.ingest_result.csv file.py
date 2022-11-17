@@ -106,18 +106,47 @@ result_final_df = add_ingestion_date(result_drop_df)
 
 # COMMAND ----------
 
-spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
+# def re_arrange_partition_column(input_df, partition_column):
+#     column_list = []
+#     for columns_name in input_df.schema.names:
+#         if columns_name != partition_column:
+#             column_list.append(columns_name)
+#     column_list.append(partition_column)
+#     output_df = input_df.select(column_list)
+#     return output_df
 
 # COMMAND ----------
 
-result_final_df = result_final_df.select("result_id","driver_id","constructor_id","number","grid","position","position_text","position_order","points","laps","time","milliseconds","rank","fastest_lap_speed","data_source","file_date","ingestion_date","race_id")
+# output_df = re_arrange_partition_column(result_final_df, "race_id")
 
 # COMMAND ----------
 
-if (spark._jsparkSession.catalog().tableExists("f1_processed.results")):
-    result_final_df.write.mode("overwrite").insertInto("f1_processed.results")
-else:
-    result_final_df.write.mode("overwrite").partitionBy('race_id').format("parquet").saveAsTable('f1_processed.results')
+# def overwrite_partition(input_df,db_name, table_name,partition_column):
+#     output_df = re_arrange_partition_column(input_df, partition_column)
+#     spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
+#     if (spark._jsparkSession.catalog().tableExists(f"{db_name}.{table_name}")):
+#         output_df.write.mode("overwrite").insertInto(f"{db_name}.{table_name}")
+#     else:
+#         output_df.write.mode("overwrite").partitionBy(partition_column).format("parquet").saveAsTable(f'{db_name}.{table_name}')
+
+# COMMAND ----------
+
+overwrite_partition(result_final_df,"f1_processed","results","race_id")
+
+# COMMAND ----------
+
+# spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
+
+# COMMAND ----------
+
+# result_final_df = result_final_df.select("result_id","driver_id","constructor_id","number","grid","position","position_text","position_order","points","laps","time","milliseconds","rank","fastest_lap_speed","data_source","file_date","ingestion_date","race_id")
+
+# COMMAND ----------
+
+# if (spark._jsparkSession.catalog().tableExists("f1_processed.results")):
+#     result_final_df.write.mode("overwrite").insertInto("f1_processed.results")
+# else:
+#     result_final_df.write.mode("overwrite").partitionBy('race_id').format("parquet").saveAsTable('f1_processed.results')
     
 
 # COMMAND ----------

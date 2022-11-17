@@ -53,7 +53,8 @@ final_df= add_ingestion_date(columns_add_df)
 
 # COMMAND ----------
 
-final_df.write.mode("overwrite").format("parquet").saveAsTable('f1_processed.lap_times')
+# final_df.write.mode("overwrite").format("parquet").saveAsTable('f1_processed.lap_times')
+overwrite_partition(final_df,"f1_processed","lap_times","race_id")
 
 # COMMAND ----------
 
