@@ -86,9 +86,9 @@ result_final_df = add_ingestion_date(result_drop_df)
 
 # COMMAND ----------
 
-for race_id_list in result_final_df.select("race_id").distinct().collect():
-    if (spark._jsparkSession.catalog().tableExists("f1_processed.results")):
-        spark.sql(f"ALTER TABLE f1_processed.results DROP IF EXISTS PARTITION (race_id = {race_id_list.race_id}) ")
+# for race_id_list in result_final_df.select("race_id").distinct().collect():
+#     if (spark._jsparkSession.catalog().tableExists("f1_processed.results")):
+#         spark.sql(f"ALTER TABLE f1_processed.results DROP IF EXISTS PARTITION (race_id = {race_id_list.race_id}) ")
     
 
 # COMMAND ----------
@@ -97,7 +97,28 @@ for race_id_list in result_final_df.select("race_id").distinct().collect():
 
 # COMMAND ----------
 
-result_final_df.write.mode("append").partitionBy('race_id').format("parquet").saveAsTable('f1_processed.results')
+# result_final_df.write.mode("append").partitionBy('race_id').format("parquet").saveAsTable('f1_processed.results')
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ##### Method 2
+
+# COMMAND ----------
+
+spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
+
+# COMMAND ----------
+
+result_final_df = result_final_df.select("result_id","driver_id","constructor_id","number","grid","position","position_text","position_order","points","laps","time","milliseconds","rank","fastest_lap_speed","data_source","file_date","ingestion_date","race_id")
+
+# COMMAND ----------
+
+if (spark._jsparkSession.catalog().tableExists("f1_processed.results")):
+    result_final_df.write.mode("overwrite").insertInto("f1_processed.results")
+else:
+    result_final_df.write.mode("overwrite").partitionBy('race_id').format("parquet").saveAsTable('f1_processed.results')
+    
 
 # COMMAND ----------
 
@@ -113,8 +134,8 @@ display(spark.read.parquet(f"{processed_folder_path}/results"))
 
 # COMMAND ----------
 
-# %sql
-# drop table f1_processed.results
+# MAGIC %sql
+# MAGIC -- drop table f1_processed.results
 
 # COMMAND ----------
 
